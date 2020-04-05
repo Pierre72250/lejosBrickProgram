@@ -1,8 +1,7 @@
 package portailEV3;
-import lejos.hardware.lcd.LCD;
+
 import lejos.hardware.port.MotorPort;
 import lejos.hardware.port.SensorPort;
-import lejos.utility.Delay;
 
 
 public class Brick{
@@ -11,6 +10,7 @@ public class Brick{
 	private static boolean app_alive;
 	
 	private static CapteurContact capteurGaucheOuvert = new CapteurContact(SensorPort.S1);
+	private static CapteurContact capteurDroitOuvert = new CapteurContact(SensorPort.S2);
 	private static CapteurContact capteurPortailFerme = new CapteurContact(SensorPort.S3);
 
 	//private static CapteurPresence capteurPresence = new CapteurP(SensorPort.S4);
@@ -20,137 +20,84 @@ public class Brick{
 
 	private static Etat etatPortail;
 
-	public static void main(String[] args) throws InterruptedException{
-		
+	private static MoteurRunnable moteurDroit;
+	private static MoteurRunnable moteurGauche;
+	
+	public static void main(String[] args){
 		etatPortail = Etat.valueOf("INCONNU");
-
-		
 		EcouteBT EBT = new EcouteBT();
 		
-	
-		initialisation();
+		etatPortail = Etat.FERME;
 		
-		MoteurRunnable runnable = new MoteurRunnable(capteurGaucheOuvert, capteurPortailFerme, porteGauche, porteDroite);
-		new Thread(runnable).start();
-
+		moteurDroit = new MoteurRunnable(capteurDroitOuvert, capteurPortailFerme, porteDroite);
+		moteurGauche = new MoteurRunnable(capteurGaucheOuvert, capteurPortailFerme, porteGauche);
+		new Thread(moteurDroit).start();
+		new Thread(moteurGauche).start();
+		
 		EBT.start();
-
-
 		app_alive = true;
-		
 		while(app_alive){
-			
 			codeTelecommade = EBT.byteRecu;
-			
 			switch(codeTelecommade){
 				// Forwards
 				case 1:
-					runnable.resumeThread();
+					ouverturePartielle();
 					break;
 
 					// Backwards
 				case 2: 
-					runnable.resumeThread();
+					ouvertureTotale();
 					break;		
 			}
 		}
 	}
 	
-	
-
-
-	
-	
-
-	@SuppressWarnings("unlikely-arg-type")
-	public static void initialisation() {
-		
-	
-		ouvertureGauche();
-		fermetureP();
-	
-		if (capteurPortailFerme.contact()) {
-			etatPortail = Etat.valueOf("FERME");
-		} 
-		// Si le capteur de postion ferm�e du portail ne detecte pas de contact alors il y a une erreur
-		else {
-			LCD.clear();
-			LCD.drawString("Erreur lors de l'initialisation", 0, 5);
-				Delay.msDelay(5000);
-				LCD.clear();
-				LCD.refresh();
-		}
-	
-	}
-	
 	public static void ouvertureTotale() {
-	
-		if (etatPortail.name().equals("FERME")) {
-			while(!capteurGaucheOuvert.contact() /*&& !capteurDroitOuvert.contact()*/) {
-				System.out.println("En ouverture totale.");
-				porteDroite.ouvrir();
-				porteGauche.ouvrir();
-			}
-			porteDroite.stop(true);
-			porteGauche.stop(true);
-			etatPortail = Etat.valueOf("OUVERT");
-		}else if(etatPortail.name().equals("OUVERT")) {
-			System.out.println("En fermeture.");
-			fermetureT();
-			etatPortail = Etat.valueOf("FERME");
-		}else if(etatPortail.name().equals("OUVERT_PARTIELLE")) {
-			System.out.println("En fermeture.");
-			fermetureP();
-			etatPortail = Etat.valueOf("FERME");
+		System.out.println("Etat = " + etatPortail.name());
+		switch (etatPortail) {
+			case FERME:
+				System.out.println("Le  portail est ferme");
+				moteurDroit.setAction(1);
+				moteurGauche.setAction(1);
+				
+				moteurDroit.resumeThread();
+				moteurGauche.resumeThread();
+				etatPortail = Etat.OUVERT;
+				break;
+				
+			case OUVERT:
+				moteurDroit.setAction(2);
+				moteurGauche.setAction(2);
+				
+				moteurDroit.resumeThread();
+				moteurGauche.resumeThread();
+				etatPortail = Etat.FERME;
+				break;
+				
+			default:
+				break;
 		}
 	}
 	
 	public static void ouverturePartielle() {
-
-		if ( etatPortail.name().equals("FERME")) {
-			while(!capteurGaucheOuvert.contact()) {
-				System.out.println("En ouverture partielle.");
-				porteGauche.ouvrir();
-			}
-			porteGauche.stop(true);
-			etatPortail = Etat.valueOf("OUVERT_PARTIELLE");
+		switch (etatPortail) {
+			case FERME:
+				moteurGauche.setAction(1);
+				
+				moteurGauche.resumeThread();
+				etatPortail = Etat.OUVERT_PARTIELLE;
+				break;
+				
+			case OUVERT:
+				moteurGauche.setAction(2);
+				
+				moteurGauche.resumeThread();
+				etatPortail = Etat.FERME;
+				break;
+				
+			default:
+				break;
 		}
-		else if (etatPortail.name().equals("OUVERT_PARTIELLE")) {
-			System.out.println("En fermeture.");
-			fermetureP();
-			etatPortail = Etat.valueOf("FERME");
-		}else if (etatPortail.name().equals("OUVERT")) {
-			System.out.println("En fermeture.");
-			fermetureT();
-			etatPortail = Etat.valueOf("FERME");
-		}
-		
 	}
 	
-	public static void ouvertureGauche() {
-		
-		while(!capteurGaucheOuvert.contact()) {
-			porteGauche.ouvrir();
-		}
-		porteGauche.stop(true);
-			
-	}
-	
-	public static void fermetureP() {
-		while (!capteurPortailFerme.contact()) {
-			porteGauche.fermer();
-		}
-		porteGauche.stop(false);
-	}
-	
-	public static void fermetureT() {
-		while (!capteurPortailFerme.contact()) {
-			porteGauche.fermer();
-			porteDroite.fermer();
-		}
-		porteGauche.stop(false);
-		porteDroite.stop(false);
-	}
-
-
 }
