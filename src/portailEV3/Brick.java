@@ -30,6 +30,8 @@ public class Brick{
 	
 		initialisation();
 		
+		MoteurRunnable runnable = new MoteurRunnable(capteurGaucheOuvert, capteurPortailFerme, porteGauche, porteDroite);
+		new Thread(runnable).start();
 
 		EBT.start();
 
@@ -43,12 +45,12 @@ public class Brick{
 			switch(codeTelecommade){
 				// Forwards
 				case 1:
-					ouverturePartielle();
+					runnable.resumeThread();
 					break;
 
 					// Backwards
 				case 2: 
-					ouvertureTotale();
+					runnable.resumeThread();
 					break;		
 			}
 		}
