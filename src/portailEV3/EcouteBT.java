@@ -50,7 +50,7 @@ public class EcouteBT extends Thread {
 		
 		public static void connect()
 		{  
-			System.out.println("En écoute");
+			System.out.println("En ecoute");
 			BTConnector ncc = (BTConnector) Bluetooth.getNXTCommConnector();
 			BTLink = (BTConnection) ncc.waitForConnection(30, NXTConnection.RAW);
 			dataOut = BTLink.openDataOutputStream();

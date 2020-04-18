@@ -1,4 +1,4 @@
-package portailEV3;
+package portailEV3.hardware;
 
 import lejos.hardware.port.Port;
 import lejos.hardware.sensor.EV3TouchSensor;
@@ -7,11 +7,11 @@ public class CapteurContact {
 
 	EV3TouchSensor capteurContact;
 
-	CapteurContact(Port port) {
+	public CapteurContact(Port port) {
 		this.capteurContact = new EV3TouchSensor(port);
 	}
 
-	boolean contact() {
+	public boolean contact() {
 
 		float[] sample = new float[capteurContact.sampleSize()];
 		capteurContact.fetchSample(sample, 0);

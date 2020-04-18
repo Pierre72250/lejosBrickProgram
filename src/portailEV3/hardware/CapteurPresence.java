@@ -1,4 +1,4 @@
-package portailEV3;
+package portailEV3.hardware;
 
 import lejos.hardware.port.Port;
 import lejos.hardware.sensor.EV3UltrasonicSensor;
@@ -7,11 +7,12 @@ public class CapteurPresence {
 
 	EV3UltrasonicSensor CapteurPresence;
 
-	CapteurPresence(Port port) {
+	public CapteurPresence(Port port) {
 		this.CapteurPresence = new EV3UltrasonicSensor(port);
+		System.out.println("Capteur de presence initialisé");
 	}
 
-	boolean presence() {
+	public boolean presence() {
 
 		float[] sample = new float[CapteurPresence.sampleSize()];
 		CapteurPresence.fetchSample(sample, 0);

@@ -1,4 +1,4 @@
-package portailEV3;
+package portailEV3.hardware;
 
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.hardware.port.*;
@@ -25,5 +25,9 @@ public class Moteur {
 
 	void stop() {
 		this.moteur.stop();
+	}
+	
+	public float getPosition() {
+		return this.moteur.getPosition();
 	}
 }
