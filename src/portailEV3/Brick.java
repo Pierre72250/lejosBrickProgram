@@ -1,11 +1,11 @@
 package portailEV3;
 
+import ca.ualberta.awhittle.ev3btrc.MessageBluetooth;
 import lejos.hardware.lcd.LCD;
 import lejos.hardware.port.MotorPort;
 import lejos.hardware.port.SensorPort;
 import lejos.utility.Delay;
 import portailEV3.enumeration.EtatPortail;
-import portailEV3.enumeration.EtatPorte;
 import portailEV3.hardware.CapteurContact;
 import portailEV3.hardware.CapteurPresence;
 import portailEV3.hardware.Porte;
@@ -17,7 +17,7 @@ import portailEV3.runnable.SoundRunnable;
 
 public class Brick{
 
-	private static int codeTelecommande;
+	private static MessageBluetooth msgTelecommande;
 	private static boolean app_alive;
 	
 	private static CapteurContact capteurGaucheOuvert = new CapteurContact(SensorPort.S1);
@@ -51,7 +51,7 @@ public class Brick{
 		portail = new PortailRunnable(moteurDroit, moteurGauche);
 		new Thread(portail).start();
 		
-		System.out.println("DEBUT INITIALISATION");
+		System.out.println("Début de l'initialisation");
 		
 		// Initialisation du portail
 		moteurDroit.setAction(1);
@@ -83,32 +83,44 @@ public class Brick{
 			LCD.refresh();
 		} else {
 			
-			System.out.println("INITIALISATION SUCCESS");
+			System.out.println("Succes de l'initialisation");
 			
 			EBT.start();
 			app_alive = true;
 			
 			int codeTelecommandePrecedent = 0;
+			MessageBluetooth msgTelecommandePrecedent = null;
 			
 			while(app_alive){
-				codeTelecommande = (byte) EBT.byteRecu;
-				if (codeTelecommandePrecedent != codeTelecommande) {
-					codeTelecommandePrecedent = codeTelecommande;
-					switch(codeTelecommande){
-						// Forwards
-						case 1:
-							portail.majEtatPortail();
-							ouverturePartielle();
-							break;
-						// Backwards
-						case 2:
-							portail.majEtatPortail();
-							ouvertureTotale();
-							break;
+				
+				msgTelecommande = EBT.msg;
+				if (msgTelecommande != null && msgTelecommande != msgTelecommandePrecedent) {
+					msgTelecommandePrecedent = msgTelecommande;
+					
+					switch(msgTelecommande.getCommande()){
+					
+						case "commande":
+							
+							switch(msgTelecommande.getParams().get(0)){
+								case "ouvTotale":
+									portail.majEtatPortail();
+									ouvertureTotale();
+									break;
+								case "ouvPartielle":
+									portail.majEtatPortail();
+									ouverturePartielle();
+									break;
+								default:
+									break;
+							}
+							
+						case "connexion":
+							System.out.println(msgTelecommande.getParams().get(0) + " " + msgTelecommande.getParams().get(0));
 						default:
 							break;
+							
 					}
-					codeTelecommande = 0;
+					
 				}
 			}
 		}
